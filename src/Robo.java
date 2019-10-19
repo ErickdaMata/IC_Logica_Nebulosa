@@ -1,6 +1,6 @@
 
 public class Robo {
-	
+
 	private int posicaoI;
 	private int posicaoJ;
 	private final int ALCANCE = 5;
@@ -131,17 +131,55 @@ public class Robo {
 		}
 		
 		//Fuzzyficação
-		double fuzzyCL[][] = fuzzyficacaoCaminhoLivre(sensor);
+		double fuzzyCaminhoLivre[][] = fuzzyficacaoCaminhoLivre(sensor);
 		
-		for(int i = 0; i < 4;i++) {
-			for(int j = 0; j < 3;j++) {
-				System.out.print(fuzzyCL[i][j]+ ", ");
-			}	
-			System.out.println();
-		}
+		//Lógica Nebulosa para Andar
+		//Defuzzyfucação
+		String regras[]= {};
+		
+		int andar = logicaNebulosa(regras);
 		
 	}
 	
+	
+	
+	private int logicaNebulosa(String[] regras) {
+		
+		double somatorioPonderadoDefuzzy = 1, somatorioFuzzy = 1; 
+		
+		//Le uma regra
+		
+		//INTERPRETA SUA CONDIÇÃO
+		
+		//Aplica a Fuzzyficação para cada parâmetro de CONDIÇÃO
+		
+		//SOMA o resultado da Fuzzyficação ao "somatórioFuzzy"
+		
+		//Lê sua CONSEQUÊNCIA
+		
+		//Aplica a Defuzzyficação para o parâmetro
+		
+		//SOMA o resultado da Defuzzyficação*Fuzzy ao "somatórioPOnderadoDefuzzy"
+		
+		//Repete até finaliar o conjunto de regras
+		
+		return (int)(somatorioPonderadoDefuzzy/somatorioFuzzy);
+	}
+
+	private double defuzzyficacao(String Intensidade, double fuzzyLivre) {
+		
+		if (Intensidade == "MUITO") {
+			return defuzzyAndarMuito(fuzzyLivre);
+		}
+		if (Intensidade == "MEDIO") {
+			return defuzzyAndarMedio(fuzzyLivre);
+		}
+		if (Intensidade == "POUCO") {
+			return defuzzyAndarPouco(fuzzyLivre);
+		}
+		return 0;
+	}
+
 	private double[][] fuzzyficacaoCaminhoLivre(int sensor[]) {
 		double caminhoLivre [][] = {
 									{fuzzyCLPouco(sensor[0]),fuzzyCLMedio(sensor[0]),fuzzyCLMuito(sensor[0])},
@@ -149,6 +187,14 @@ public class Robo {
 									{fuzzyCLPouco(sensor[2]),fuzzyCLMedio(sensor[2]),fuzzyCLMuito(sensor[2])},
 									{fuzzyCLPouco(sensor[3]),fuzzyCLMedio(sensor[3]),fuzzyCLMuito(sensor[3])}
 								   };
+		
+
+		for(int i = 0; i < 4;i++) {
+			for(int j = 0; j < 3;j++) {
+				System.out.print(caminhoLivre[i][j]+ ", ");
+			}	
+			System.out.println();
+		}
 		return caminhoLivre;
 	}
 	
@@ -180,5 +226,41 @@ public class Robo {
 		}
 	}
 	
+	private double defuzzyAndarPouco(double x) {
+		return 3-(x*2);
+	}
 	
+	private double defuzzyAndarMedio(double x) {
+		return 5-(x*2);
+	}
+	
+	private double defuzzyAndarMuito(double x) {
+		return (2*x)+3;
+	}
+	
+	private double minimo (int valores[]) {
+		
+		double menor = 0;
+		
+		for (int i = 0; i< valores.length; i++) {
+			if (valores[i] < menor) {
+				menor = valores[i];
+			}
+		}
+		
+		return menor;
+	}
+	
+	private double maior (int valores[]) {
+		
+		double maior = 0;
+		
+		for (int i = 0; i< valores.length; i++) {
+			if (valores[i]>maior) {
+				maior = valores[i];
+			}
+		}
+		
+		return maior;
+	}
 }

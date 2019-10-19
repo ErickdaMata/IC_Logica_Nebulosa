@@ -2,8 +2,8 @@ import java.util.Random;
 
 public class Main {
 
-	final static int TAMANHO = 50;
-	final static int OBSTACULOS = 180;
+	final static int TAMANHO = 10;
+	final static int OBSTACULOS = 20;
 	
 	public static void main(String[] args) 
 	{
