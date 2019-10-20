@@ -1,3 +1,6 @@
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 
 public class Robo {
 
@@ -135,9 +138,8 @@ public class Robo {
 		
 		//Lógica Nebulosa para Andar
 		//Defuzzyfucação
-		String regras[]= {};
 		
-		int andar = logicaNebulosa(regras);
+		int andar = logicaNebulosa(lerRegras("regras/regras.txt", 4));
 		
 	}
 	
@@ -145,25 +147,109 @@ public class Robo {
 	
 	private int logicaNebulosa(String[] regras) {
 		
-		double somatorioPonderadoDefuzzy = 1, somatorioFuzzy = 1; 
+		double somatorioPonderadoRegras = 1, somatorioParametroFuzzy = 1; 
 		
-		//Le uma regra
+		int indice_token = 0, tamanho_token = 0;
+		double peso;
+		String token;
 		
-		//INTERPRETA SUA CONDIÇÃO
-		
-		//Aplica a Fuzzyficação para cada parâmetro de CONDIÇÃO
-		
-		//SOMA o resultado da Fuzzyficação ao "somatórioFuzzy"
-		
-		//Lê sua CONSEQUÊNCIA
-		
-		//Aplica a Defuzzyficação para o parâmetro
-		
-		//SOMA o resultado da Defuzzyficação*Fuzzy ao "somatórioPOnderadoDefuzzy"
+		for (int i = 0 ; i < regras.length; i++) {
+			//Le uma regra
+			String regra = regras[0]; 
+			System.out.println(regra);
+			
+			//INTERPRETA SUA CONDIÇÃO
+			for(indice_token = 3; indice_token < regra.indexOf("entao"); indice_token += (tamanho_token+1)) {
+				
+				//Obtém da regra lida, uma substring até o próximo espaço vazio. Encontrando, por exemplo> INANIMADO=não
+				token = regra.substring(indice_token, regra.indexOf(" ", indice_token));
+
+				tamanho_token = token.length();
+				//Aplica a Fuzzyficação para cada parâmetro de CONDIÇÃO
+				
+				//Verica se é parâmetro
+				if(token.contains("=")) {
+					
+					//Calcula o valor para o parâmetro
+					String parametro[] = token.split("=");
+					
+					peso = parametroDirecao(parametro[0], parametro[1]);
+					
+					System.out.println("Para "+ parametro[0] + " = " + parametro[1] + ": " + peso);
+					
+				
+				//Caso não seja uma parâmatro
+				} else {
+					//Verifica se é um operador tipo E
+					if(token.contains("E")) {
+						
+					}
+					//Verifica se é um operador tipo OU
+					if(token.contains("OU")){
+						
+					}
+				}
+				
+			}
+			
+			
+			
+			//SOMA o resultado da Fuzzyficação ao "somatórioFuzzy"
+			
+			//Lê sua CONSEQUÊNCIA
+			
+			//Aplica a Defuzzyficação para o parâmetro
+			
+			//SOMA o resultado da Defuzzyficação*Fuzzy ao "somatórioPOnderadoDefuzzy"
+			
+		}
 		
 		//Repete até finaliar o conjunto de regras
 		
-		return (int)(somatorioPonderadoDefuzzy/somatorioFuzzy);
+		return (int)(somatorioPonderadoRegras/somatorioParametroFuzzy);
+	}
+
+	private double parametroDirecao(String direcao, String intensidade) {
+		
+		double fuzzy = -1;
+		
+		System.out.println("//"+direcao);
+		System.out.println("//"+intensidade);
+		
+		switch (direcao) {
+		case "BAIXO":
+			fuzzy = parametroIntensidade(getSensorBaixo(), intensidade);
+			return fuzzy;
+		case "CIMA":
+			fuzzy = parametroIntensidade(getSensorCima(), intensidade);
+			return fuzzy;
+		case "DIREITA":
+			fuzzy = parametroIntensidade(getSensorDireita(), intensidade);
+			return fuzzy;
+		case "ESQUERDA":
+			fuzzy = parametroIntensidade(getSensorEsquerda(), intensidade);
+			return fuzzy;
+		default:
+			return fuzzy;
+		}
+	}
+	
+	private double parametroIntensidade(double leituraSensor, String intensidade) {
+		double fuzzy = -1;
+		
+		switch (intensidade) {
+		case "MEIO":
+			fuzzy = fuzzyCLMedio(leituraSensor);
+			return fuzzy;
+		case "MUITO":
+			fuzzy = fuzzyCLMuito(leituraSensor);
+			return fuzzy;
+		case "POUCO":
+			fuzzy = fuzzyCLPouco(leituraSensor);
+			return fuzzy;
+		default:
+			return fuzzy;
+		}
 	}
 
 	private double defuzzyficacao(String Intensidade, double fuzzyLivre) {
@@ -262,5 +348,41 @@ public class Robo {
 		}
 		
 		return maior;
+	}
+	
+	private String[] lerRegras(String local, int quantasRegras) {
+		
+		String regra;
+		String regras[] = new String[quantasRegras];
+		int i = 0;
+		
+		try {
+			
+			//Abre o arquivo de que contém as regras do sistema 
+			FileInputStream 	arquivo = new FileInputStream("regras/regras");
+			InputStreamReader	input 	= new InputStreamReader(arquivo);
+			BufferedReader		buffer 	= new BufferedReader(input);
+
+			//Le uma regra contida na linha do arquivo de texto
+			regra = buffer.readLine();
+			
+			while (regra != null) {
+				regras[i] = regra;
+				regra = buffer.readLine();
+				i++;
+			}
+			
+
+			//Finaliza o buffer e o acesso ao arquivo
+			buffer.close();
+			arquivo.close();
+			
+		} catch (Exception e) {
+			// TODO: handle exception
+			System.out.println("Erro ao abrir o arquivo: " + e.toString());
+		}
+		
+		
+		return regras;
 	}
 }
