@@ -2,20 +2,48 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane.MaximizeAction;
-
 public class Robo {
 
 	private int posicaoI;
 	private int posicaoJ;
-	private final int ALCANCE = 5;
-	private final int REGRAS = 6;
-	private boolean chegou = false;
-	private int sensorBaixo, sensorCima, sensorDireita, sensorEsquerda;
 	
+	private final int ALCANCE = 5;
+	private final int REGRAS = 11;
+	private final int MAX_PARAM = 10;
+	
+	private final boolean VERBOSO = false;
+	private boolean chegou = false;
+	
+	private int sensorBaixo, sensorCima, sensorDireita, sensorEsquerda;
+	private double direcao[] = {0,0,0,0}; 
+	
+	public double[] getPesoDirecao() {
+		return direcao;
+	}
+
+	private void pesoDireita(double valor) {
+		this.direcao[0] += valor;
+	}
+	
+	private void pesoBaixo(double valor) {
+		this.direcao[1] += valor;
+	}
+	
+	private void pesoEsquerda(double valor) {
+		this.direcao[2] += valor;
+	}
+	
+	private void pesoCima(double valor) {
+		this.direcao[3] += valor;
+	}
+
 	public Robo() {
 		setPosicaoI(0);
 		setPosicaoj(0);
+	}
+	public Robo(int i, int j) {
+		setPosicaoI(i);
+		setPosicaoj(j);
 	}
 	
 	public boolean finalizou() {
@@ -79,7 +107,9 @@ public class Robo {
 		return sensor;
 	}
 	
-	public int[] leituraSensores(char campo[][], int TAMANHO){
+	public void leituraSensores(char campo[][], int TAMANHO){
+		
+		direcao[0] = direcao[1] = direcao[2] = direcao[3] = 0;
 		
 		int posI = getPosicaoI(), posJ = getPosicaoJ(); 
 		System.out.println("Robo["+posI+","+posJ+"]");
@@ -115,113 +145,164 @@ public class Robo {
 		}
 		setSensorCima((posI-1)-p);;
 		
-		return sensores();
 	}
 	
 	public void movimentar(char campo[][], int TAMANHO) {
 		
-		int sensor[] = leituraSensores(campo, TAMANHO);
+		//leituraSensores(campo, TAMANHO);
+		leituraSensores(campo, TAMANHO);
 		
-		campo[posicaoI][posicaoJ] = '_';
+		//Inferência Nebulosa para decidir a intensidade e sentido
+		int passos = inferenciaNebulosa(lerRegras("regras/regras.txt", REGRAS));
 		
-		if(sensor[1] > sensor[2]) {
-			this.posicaoI++;
-		} else {
-			this.posicaoJ++;
-		}
+		//Movimento
+		mover(campo, passos, direcao());
 		
-		campo[posicaoI][posicaoJ] = 'R';
-		
-		if((posicaoI+posicaoJ)==(TAMANHO-1)*2) {
+		//AVISA QUE CHEGOU AO DESTINO
+		if((getPosicaoI()+getPosicaoJ())==(TAMANHO-1)*2) {
+			LOG("CHEGOU");
 			this.chegou = true;
 		}
 		
-		//Fuzzyficação
-		double fuzzyCaminhoLivre[][] = fuzzyficacaoCaminhoLivre(sensor);
-		
-		//Lógica Nebulosa para Andar
-		//Defuzzyfucação
-		
-		int andar = logicaNebulosa(lerRegras("regras/regras.txt", REGRAS));
 		
 	}
 	
 	
-	
-	private int logicaNebulosa(String[] regras) {
+	private char direcao() {
 		
-		double somatorioPonderadoRegras = 1, somatorioParametroFuzzy = 1; 
+		int maior = melhor(direcao);
 		
-		int indice_token = 0, tamanho_token = 0;
+		switch (maior) {
+		case 0:
+			return 'D';
+		case 1:
+			return 'B';
+		case 2:
+			return 'E';
+		case 3:
+			return 'C';
+
+		}
+		
+		
+		return 0;
+	}
+
+	private int melhor(double[] direcao) {
+		
+		double maiorPeso = direcao[0];
+		int melhor = 0;
+		
+		LOG("CIMA: " + direcao[3]);
+		LOG("BAIXO: " + direcao[1]);
+		LOG("DIREITA: " + direcao[0]);
+		LOG("ESQUERDA: " + direcao[2]);
+		
+		for(int i = 1; i < direcao.length ; i++) {
+			if (direcao[i]>maiorPeso) {
+				maiorPeso = direcao[i];
+				melhor = i;
+			}
+		}
+		return melhor;
+	}
+
+	private void mover(char[][] campo, int passos, char direcao) {
+		
+		campo[getPosicaoI()][getPosicaoJ()] = '_';
+		
+		switch (direcao) {
+		case 'B':
+			setPosicaoI(getPosicaoI()+passos);
+			setPosicaoj(getPosicaoJ());
+			break;
+
+		case 'C':
+			setPosicaoI(getPosicaoI()-passos);
+			setPosicaoj(getPosicaoJ());
+			break;
+		
+		case 'D':
+			setPosicaoI(getPosicaoI());
+			setPosicaoj(getPosicaoJ()+passos);
+			break;
+		
+		case 'E':
+			setPosicaoI(getPosicaoI());
+			setPosicaoj(getPosicaoJ()-passos);
+			break;
+			
+		default:
+			break;
+		}
+		
+		campo[getPosicaoI()][getPosicaoJ()] = 'R';
+		
+		LOG(passos + " PASSOS para " + direcao);
+	}
+
+	private int inferenciaNebulosa(String[] regras) {
+		
 		double peso;
+		double regraPonderada;
+		double somatorioPonderadoRegras = 0, somatorioParametroFuzzy = 0;
 		
-		String token;
-		String parametro[] = new String[2];
-		String condicaoAND[] = new String[10];
-		String condicaoOR[] = new String[10];
+		String grupoAND;
+		String parametro;
+		String intensidadeAndar, direcaoAndar;
+		String condicaoAND[] = new String[MAX_PARAM];
 		
 		for (int nRegra = 0 ; nRegra < regras.length; nRegra++) {
 			//Le uma regra
-			String regra = regras[nRegra]; 
-			System.out.println(regra);
+			String regra = regras[nRegra];
+			
+			//Obtém a intensidade da consequencia
+			intensidadeAndar = regra.substring(regra.indexOf("ANDAR=")+("ANDAR=").length(),
+									regra.indexOf(" para"));
+			
+			//Obtém a direção da regra
+			direcaoAndar = regra.substring(regra.indexOf("para ")+("para ").length());
 			
 			//Verica se contém múltiplos parâmetros
 			if(regra.contains("[")) {
 				
 				//Obtém da regra lida, uam substring contendo toda expressão
-				token = regra.substring(regra.indexOf("[")+1, regra.indexOf("]"));
+				grupoAND = regra.substring(regra.indexOf("[")+1, regra.indexOf("]"));
 				
-				condicaoAND = token.split(" E ");
+				//Separa as condiçoes do grupo em parametros compostos:
+				//Exemplo: SENTIDO=INTENSIDADE OU {PARAMETEROS}
+				condicaoAND = grupoAND.split(" E ");
 				
-				peso = 0;
-				for(int i = 0; i < condicaoAND.length; i++) {
-					if(condicaoAND[i].contains("{")) {
-						
-						token = regra.substring(regra.indexOf("{")+1, regra.indexOf("}"));
-								
-						condicaoOR = token.split(" OU ");
-						
-						peso = minimo(peso, resultadoOR(condicaoOR));
-								
-					}else {
-						parametro = condicaoAND[i].split("=");
-						peso = minimo(peso, parametroDirecao(parametro[0], parametro[1]));	
-					}
+				//Avalio o primeira paramatro de AND
+				peso = avaliarParametro(condicaoAND[0]);
 				
-				}
-				
-				
-				tamanho_token = token.length();
-				
-				peso = 0;
-				
+				for(int i = 1; i < condicaoAND.length; i++) {
+					
+					//Avaliar peso da condição
+					peso = minimo(peso, avaliarParametro(condicaoAND[i]));
+					
+				}	
 				somatorioParametroFuzzy += peso;
-				//somatorioPonderadoRegras += defuzzyAndar(peso)*peso;
-				
 			
 			//Caso não possua mais de um parâmetro
 			} else {
-				token = regra.substring(regra.indexOf("SE ")+3, regra.indexOf(" LIVRE"));
+				//Busca o parametro dentro da regra
+				parametro = regra.substring(regra.indexOf("SE ")+3, regra.indexOf(" LIVRE"));
 				
-				parametro = token.split("=");
-				peso = parametroDirecao(parametro[0], parametro[1]);
+				//Avalia e obtem o peso do parametro
+				peso = avaliarParametro(parametro);
 				
 				somatorioParametroFuzzy += peso;
-				//somatorioPonderadoRegras += defuzzyAndar(peso)*peso;
-				
 			}
 			
-			//INTERPRETA SUA CONDIÇÃO
-			for(indice_token = 3; indice_token < regra.indexOf("entao"); indice_token += (tamanho_token+1)) {
-				
-				//Aplica a Fuzzyficação para cada parâmetro de CONDIÇÃO
-				
-				
-				
-			}
+			//Multiplica a intensidade final da CONDICAO pelo fuzzy da CONSEQUENCIA
+			regraPonderada = (peso*defuzzyficacao(intensidadeAndar, peso));
+
+			pesoDirecao(regraPonderada, direcaoAndar);
 			
-			System.out.println("PESO: "+peso);
+			somatorioPonderadoRegras += regraPonderada;
 			
+			LOG((nRegra+1) + " P: "+peso+ " - D: " + defuzzyficacao(intensidadeAndar, peso));
 		}
 		
 		//Repete até finaliar o conjunto de regras
@@ -229,6 +310,70 @@ public class Robo {
 		return (int)(somatorioPonderadoRegras/(somatorioParametroFuzzy == 0? 1 : somatorioParametroFuzzy ));
 	}
 
+	private void pesoDirecao(double regraPonderada, String direcaoAndar) {
+		
+		switch (direcaoAndar) {
+		case "BAIXO":
+			pesoBaixo(regraPonderada);
+			break;
+		case "CIMA":
+			pesoCima(regraPonderada);
+			break;
+		case "DIREITA":
+			pesoDireita(regraPonderada);
+			break;
+		case "ESQUERDA":
+			pesoEsquerda(regraPonderada);
+			break;	
+		default:
+			break;
+		}
+		
+	}
+
+	private double avaliarParametro(String parametroRecebido) {
+		
+		//Caso o parametro avaliado tenha um precedente OR
+		if(parametroRecebido.contains("{")){
+
+			//Calcula o resultado interno do OR
+			return resultadoOR(parametroRecebido);
+			
+		} else {
+
+			//Se não, ele será um parametro comum
+			//Separamos em sentido e intensidade
+			String[] parametro = parametroRecebido.split("=");
+			
+			//Passamos parametro[0] = sentido e parametro[1] = intensidade
+			return parametroDirecao(parametro[0], parametro[1]);	
+		}
+		
+	}
+	
+	private double resultadoOR(String grupoOR) {
+		
+		//Obtém da regra lida, uma substring contendo toda expressão sem chaver
+		grupoOR = grupoOR.substring(grupoOR.indexOf("{")+1, grupoOR.indexOf("}"));
+		
+		//Extrai o grupo de parametros OU, DIREITA=NAO | POUCO 
+		String condicaoOR[] = grupoOR.split(" OU ");
+		
+		//Obtem o primeiro parametro OU, DIRETA | NAO
+		String parametro[] = condicaoOR[0].split("=");
+		
+		//Avalia o parametro recebido
+		double pesoFinal = parametroDirecao(parametro[0], parametro[1]);
+		
+		for(int i = 1; i< condicaoOR.length; i++) {
+			//Avalia do segundo parametro em dia, mantendo a direção inicial
+			//Foi avaliado DIRETA=NAO, agora será avalida DIREITA=POUCO
+			pesoFinal = maximo(pesoFinal, parametroDirecao(parametro[0], condicaoOR[i]));
+			
+		}
+
+		return pesoFinal;
+	}
 
 	private double parametroDirecao(String direcao, String intensidade) {
 		
@@ -262,6 +407,9 @@ public class Robo {
 		case "MUITO":
 			fuzzy = fuzzyCLMuito(leituraSensor);
 			return fuzzy;
+		case "NAO":
+			fuzzy = fuzzyCLNao(leituraSensor);
+			return fuzzy;
 		case "POUCO":
 			fuzzy = fuzzyCLPouco(leituraSensor);
 			return fuzzy;
@@ -270,36 +418,8 @@ public class Robo {
 		}
 	}
 
-	private double defuzzyficacao(String Intensidade, double fuzzyLivre) {
-		
-		if (Intensidade == "MUITO") {
-			return defuzzyAndarMuito(fuzzyLivre);
-		}
-		if (Intensidade == "MEDIO") {
-			return defuzzyAndarMedio(fuzzyLivre);
-		}
-		if (Intensidade == "POUCO") {
-			return defuzzyAndarPouco(fuzzyLivre);
-		}
-		return 0;
-	}
-
-	private double[][] fuzzyficacaoCaminhoLivre(int sensor[]) {
-		double caminhoLivre [][] = {
-									{fuzzyCLPouco(sensor[0]),fuzzyCLMedio(sensor[0]),fuzzyCLMuito(sensor[0])},
-									{fuzzyCLPouco(sensor[1]),fuzzyCLMedio(sensor[1]),fuzzyCLMuito(sensor[1])},
-									{fuzzyCLPouco(sensor[2]),fuzzyCLMedio(sensor[2]),fuzzyCLMuito(sensor[2])},
-									{fuzzyCLPouco(sensor[3]),fuzzyCLMedio(sensor[3]),fuzzyCLMuito(sensor[3])}
-								   };
-		
-
-		for(int i = 0; i < 4;i++) {
-			for(int j = 0; j < 3;j++) {
-				System.out.print(caminhoLivre[i][j]+ ", ");
-			}	
-			System.out.println();
-		}
-		return caminhoLivre;
+	private double fuzzyCLNao(double x) {
+		return x == 0? 1 : 0;
 	}
 	
 	private double fuzzyCLPouco(double x) {
@@ -330,20 +450,37 @@ public class Robo {
 		}
 	}
 	
+	private double defuzzyficacao(String intensidade, double fuzzyCL) {
+		
+		if (intensidade.contains("MUITO")) {
+			return defuzzyAndarMuito(fuzzyCL);
+		}
+		if (intensidade.contains("MEDIO")) {
+			return defuzzyAndarMedio(fuzzyCL);
+		}
+		if (intensidade.contains("POUCO")) {
+			return defuzzyAndarPouco(fuzzyCL);
+		}
+		return -1;
+	}
+	
 	private double defuzzyAndarPouco(double x) {
 		return 3-(x*2);
 	}
+	
 	
 	private double defuzzyAndarMedio(double x) {
 		return 5-(x*2);
 	}
 	
+	
 	private double defuzzyAndarMuito(double x) {
 		return (2*x)+3;
 	}
 	
-	private double minimo (double pesoAtual, double pesoVizinho) {
 	
+	private double minimo (double pesoAtual, double pesoVizinho) {
+		
 		return pesoAtual > pesoVizinho ? pesoVizinho : pesoAtual;
 	}
 	
@@ -387,20 +524,21 @@ public class Robo {
 		
 		return regras;
 	}
-
-
-	private double resultadoOR(String[] condicaoOR) {
-		
-		String paramatro[] = condicaoOR[0].split("=");
-		
-		double pesoFinal = parametroDirecao(paramatro[0], paramatro[1]);
-		
-		for(int i = 1; i< condicaoOR.length; i++) {
-			pesoFinal = maximo(pesoFinal, parametroDirecao(paramatro[0], condicaoOR[i]));
+	
+	void LOG(String frase) {
+		if (!VERBOSO) {
+			return;
 		}
-		
-		return pesoFinal;
+		System.out.println("> " +frase);
 	}
-
+	
+	void LOG(String[] frase) {
+		if (!VERBOSO) {
+			return;
+		}
+		for(int i = 0;i< frase.length;i++) {
+			System.out.println(">["+i+"]> " +frase[i]);	
+		}
+	}
 }
 
