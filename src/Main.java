@@ -2,22 +2,21 @@ import java.util.Random;
 
 public class Main {
 
-	final static int TAMANHO = 30;
-	final static int OBSTACULOS= 220;
+	final static int TAMANHO = 50;
+	final static int OBSTACULOS= 180;
+	
+	final static int TESTE = 200;
+	static int[] passos = new int[TESTE];
 	
 	public static void main(String[] args) 
 	{
 		
-		Robo robo = new Robo();
-		
 		int i, j;
 		char campo[][] = new char[TAMANHO][TAMANHO];
 		
-		for (i = 0; i<TAMANHO; i++) {
-			for (j = 0; j<TAMANHO; j++) {
-				campo[i][j] = '_';
-			}
-		}
+		limparCampo(campo);
+		
+		Robo robo = new Robo();
 		
 		//Inclusão dos Obstáculos
 		colocarObstaculos(campo);
@@ -26,25 +25,29 @@ public class Main {
 		
 		
 		desenharCampo(campo);
-		try {
-			Thread.sleep(2000);
-		} catch (Exception e) {
-			// TODO: handle exception
-		}
+
+		delay(1500);
+		
 		while(!robo.finalizou()) {
 			//Andar com o Robo
 			robo.movimentar(campo, TAMANHO);
-			desenharCampo(campo);
-			try {
-				Thread.sleep(1000);
-			} catch (Exception e) {
-				// TODO: handle exception
-			}
 			
+			desenharCampo(campo);
+			
+			delay(500);
 		}
 		
 	}
 	
+	private static void delay(int i) {
+		// TODO Auto-generated method stub
+		try {
+			Thread.sleep(i);
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+	}
+
 	static void colocarObstaculos(char campo[][]) {
 		Random randomico = new Random();
 		
@@ -64,25 +67,29 @@ public class Main {
 		
 		
 		/**
-		campo[1][0] = 'O';
-		campo[1][2] = 'O';
+		campo[0][0] = '_';
+		campo[0][1] = 'O';
+		campo[0][2] = '_';
+		campo[0][3] = '_';
+		campo[0][4] = '_';
+		
+		campo[1][0] = '_';
+		campo[1][1] = '_';
+		campo[1][2] = '_';
 		campo[1][3] = 'O';
-		campo[1][6] = 'O';
-		campo[2][3] = 'O';
-		campo[3][4] = 'O';
-		campo[3][6] = 'O';
-		campo[4][0] = 'O';
-		campo[4][6] = 'O';
-		campo[4][8] = 'O';
-		campo[5][2] = 'O';
-		campo[6][3] = 'O';
-		campo[6][5] = 'O';
-		campo[6][8] = 'O';
-		campo[7][5] = 'O';
-		campo[8][3] = 'O';
-		campo[8][5] = 'O';
-		campo[8][8] = 'O';
-		campo[8][9] = 'O';
+		campo[1][4] = '_';
+		
+		campo[2][0] = 'O';
+		campo[2][1] = '_';
+		campo[2][2] = 'O';
+		campo[2][3] = '_';
+		campo[2][4] = '_';
+		
+		campo[3][0] = '_';
+		campo[3][1] = '_';
+		campo[3][2] = '_';
+		campo[3][3] = '_';
+		campo[3][4] = '_';
 		*/
 	}
 	
@@ -99,11 +106,15 @@ public class Main {
 			System.out.println("");
 		}
 	}
-	
-	static void movimentar(Robo robo, char campo[][]) {
 
+	
+	static void limparCampo(char campo[][]) {
 		
-		
+		for (int i = 0; i<TAMANHO; i++) {
+			for (int j = 0; j<TAMANHO; j++) {
+				campo[i][j] = '_';
+			}
+		}
 	}
 	
 }

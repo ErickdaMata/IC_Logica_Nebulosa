@@ -17,6 +17,24 @@ public class Robo {
 	private int sensorBaixo, sensorCima, sensorDireita, sensorEsquerda;
 	private double direcao[] = {0,0,0,0}; 
 	
+	public Robo() {
+		setPosicaoI(0);
+		setPosicaoj(0);
+	}
+	public Robo(int i, int j) {
+		setPosicaoI(i);
+		setPosicaoj(j);
+	}
+	
+	public void reiniciar() {
+		setPosicaoI(0);
+		setPosicaoj(0);
+		this.chegou = false;
+		this.direcao[0] = this.direcao[1] =
+				this.direcao[2] = this.direcao[3] = 0;
+	}
+	
+	
 	public double[] getPesoDirecao() {
 		return direcao;
 	}
@@ -37,14 +55,6 @@ public class Robo {
 		this.direcao[3] += valor;
 	}
 
-	public Robo() {
-		setPosicaoI(0);
-		setPosicaoj(0);
-	}
-	public Robo(int i, int j) {
-		setPosicaoI(i);
-		setPosicaoj(j);
-	}
 	
 	public boolean finalizou() {
 		return chegou;
@@ -112,7 +122,7 @@ public class Robo {
 		direcao[0] = direcao[1] = direcao[2] = direcao[3] = 0;
 		
 		int posI = getPosicaoI(), posJ = getPosicaoJ(); 
-		System.out.println("Robo["+posI+","+posJ+"]");
+		LOG("Robo["+posI+","+posJ+"]");
 		int p;
 		
 		//Sensor +i (para baixo)
